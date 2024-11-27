@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
+require('dotenv').config();
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 const dbConfig = require('./config/database.config.js');
@@ -21,11 +22,15 @@ app.get('/', (req, res) => {
 const RegisterRoute = require('./app/routes/Register.js');
 const PetRoute=require('./app/routes/pet.js');
 const petHealthRoutes = require("./app/routes/petHealth.js");
-
+const TransferRoute = require('./app/routes/transfer.js');
 app.use('/api/auth', RegisterRoute);
 app.use('/api/register/pets', PetRoute);
 app.use('/api',PetRoute);
 app.use("/api/pet-health", petHealthRoutes);
+app.use('/api/transfer', TransferRoute);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 
 app.listen(3000, () => {
