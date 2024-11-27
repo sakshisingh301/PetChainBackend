@@ -25,7 +25,7 @@ const petHealthRoutes = require("./app/routes/petHealth.js");
 const TransferRoute = require('./app/routes/transfer.js');
 app.use('/api/auth', RegisterRoute);
 app.use('/api/register/pets', PetRoute);
-app.use('/api',PetRoute);
+app.use('/api/pets',PetRoute);
 app.use("/api/pet-health", petHealthRoutes);
 app.use('/api/transfer', TransferRoute);
 
@@ -34,5 +34,5 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.listen(3000, () => {
-    console.log("Server is listening on port 3000");
+    console.log('Server is running on port 3000');
 });

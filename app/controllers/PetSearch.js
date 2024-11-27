@@ -1,22 +1,36 @@
 const PetModel = require('../model/pet');
 const RegisterModel=require('../model/register')
+const crypto = require('crypto');
+const { getOwnershipFromResdb } =require('../utils/util')
+const {
+  storingLostEventInResdb,getLostHashFromResdb
+} = require('../utils/util');
+
 exports.searchPet = async (req, res) => {
 
     const { petId } = req.params;
+    const generateEventHash = (ownerId, petId, eventType) => {
+      return crypto
+        .createHash('sha256')
+        .update(`${ownerId}${petId}${eventType}`)
+        .digest('hex');
+    };
 
     try {
         // Find the pet by petId and populate owner details
-        console.log("------------------------------------")
+
         const pet = await PetModel.findOne({petId});
         const ownerId= pet.owner_id;
         const ownerName=pet.owner_name;
-        console.log("Owner name is ", ownerName)
-        // const ownerInfo=await RegisterModel.findById(ownerId);
-        // const owner_name=ownerInfo.owner_name;
-        
-
-        console.log("pet is",pet)
-  
+        const eventType="lost"
+        const currentEventHash = generateEventHash(ownerId, petId, eventType);
+        const resDbLostEventHash=await getLostHashFromResdb(ownerId); 
+        const lostCal=resDbLostEventHash.value.lostHash;
+        if(currentEventHash!=lostCal)
+        {
+          return res.status(404).json({ message: 'The pet that you are searching is not lost' });
+        }
+       
         if (!pet) {
           return res.status(404).json({ message: 'Pet not found.' });
         }
@@ -31,8 +45,8 @@ exports.searchPet = async (req, res) => {
             age: pet.age,
             gender: pet.gender,
             color: pet.color,
-            distinctive_marks: pet.distinctive_marks
-            // owner_name: owner_name
+            distinctive_marks: pet.distinctive_marks,
+             owner_name: ownerName
           },
         });
       } catch (error) {
@@ -40,3 +54,4 @@ exports.searchPet = async (req, res) => {
         res.status(500).json({ message: 'An error occurred while searching for the pet.' });
       }
 };
+
