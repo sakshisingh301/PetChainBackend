@@ -19,10 +19,13 @@ app.get('/', (req, res) => {
 });
 
 const RegisterRoute = require('./app/routes/Register.js');
-const PetRoute=require('./app/routes/pet.js')
+const PetRoute=require('./app/routes/pet.js');
+const petHealthRoutes = require("./app/routes/petHealth.js");
+
 app.use('/api/auth', RegisterRoute);
 app.use('/api/register/pets', PetRoute);
-app.use('/api',PetRoute)
+app.use('/api',PetRoute);
+app.use("/api/pet-health", petHealthRoutes);
 
 
 app.listen(3000, () => {
