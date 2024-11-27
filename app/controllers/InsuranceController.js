@@ -2,125 +2,168 @@ const mongoose = require('mongoose');
 const Insurance = require('../model/insurance'); // Import the Insurance model
 const PetModel=require('../model/pet')
 const claim=require('../model/claim');
+const { deployAndExecute } = require("../contracts/deployAndExecute");
+const { BigNumber } = require("ethers");
 
 // Add Existing Insurance
 exports.addInsuranceToPetChain = async (req, res) => {
-  const { petId, providerName, policyNumber, coverageAmount, validityPeriod,ownerId } = req.body;
+  const { petId, providerName, policyNumber, coverageAmount, validityPeriod, ownerId } = req.body;
 
-  // Validate input
-  if (!petId ||!ownerId|| !providerName || !policyNumber || !coverageAmount || !validityPeriod) {
+  // Validate request body
+  if (!petId || !ownerId || !providerName || !policyNumber || !coverageAmount || !validityPeriod) {
     return res.status(400).json({
       success: false,
-      message: 'All fields (petId,ownerId, providerName, policyNumber, coverageAmount, validityPeriod) are required.',
+      message: "All fields (petId, ownerId, providerName, policyNumber, coverageAmount, validityPeriod) are required.",
     });
   }
-  const pets = await PetModel.find({ owner_id: ownerId });
-  console.log("petId from database for this owner :", pets.petId)
-  console.log("petid provided by user:",petId)
-  console.log("pets:", pets)
-
-  if(pets[0]?.petId!=petId)
-  {
-    return res.status(404).json({
-        success: false,
-        message: 'you are not eligible to add claim for this petId.',
-
-    })
-  }
-
-  claimId=`CLAIM_${new Date().getTime()}`;
-  
 
   try {
-    // Create a new insurance record
+    // Check if pet belongs to the owner
+    const pets = await PetModel.find({ owner_id: ownerId });
+    if (pets[0]?.petId !== petId) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not eligible to add insurance for this petId.",
+      });
+    }
+
+    // Save insurance record in the database
     const insurance = new Insurance({
       petId,
       providerName,
       policyNumber,
       coverageAmount,
       validityPeriod,
-      claimId
+      claimId: `CLAIM_${new Date().getTime()}`,
     });
 
-    // Save to database
     await insurance.save();
-    console.log("insurance details:", insurance)
+    console.log("Insurance saved to database:", insurance);
+
+    // Prepare arguments for the addPolicyToPetChain function
+    const addPolicyToPetChainArgs = JSON.stringify([
+      petId,
+      ownerId,
+      providerName,
+      policyNumber,
+      coverageAmount,
+      Math.floor(new Date(validityPeriod.startDate).getTime() / 1000),
+      Math.floor(new Date(validityPeriod.endDate).getTime() / 1000),
+    ]);
+    console.log("addPolicyToPetChain args:", addPolicyToPetChainArgs);
+
+    // Call the addPolicyToPetChain function
+    const addPolicyToPetChainResult = await deployAndExecute(
+      "addPolicyToPetChain",
+      addPolicyToPetChainArgs
+    );
+    console.log("addPolicyToPetChain result:", addPolicyToPetChainResult);
+
+    // Prepare arguments for the addPolicy function
+    const addPolicyArgs = JSON.stringify([
+      policyNumber,
+      coverageAmount,
+      Math.floor(new Date(validityPeriod.startDate).getTime() / 1000),
+      Math.floor(new Date(validityPeriod.endDate).getTime() / 1000),
+      ["Dental", "Accidental", "Illness"], // Example coverageTypes
+      ["1000", "5000", "2000"], // Example coverageLimits
+      ["50", "100", "75"], // Example deductibles
+      ["Annual", "Per Event", "Annual"], // Example limits
+      ["Cosmetic Procedures", "Pre-existing Conditions"], // Example notCoveredInPolicy
+    ]);
+    console.log("addPolicy args:", addPolicyArgs);
+
+    // Call the addPolicy function
+    const addPolicyResult = await deployAndExecute("addPolicy", addPolicyArgs);
+    console.log("addPolicy result:", addPolicyResult);
 
     return res.status(201).json({
       success: true,
-      message: 'Insurance added successfully',
+      message: "Insurance added successfully to PetChain and policy mapped.",
+      addPolicyToPetChainResult,
+      addPolicyResult,
       data: insurance,
     });
   } catch (error) {
-    console.error('Error adding insurance:', error);
-
-    // Handle duplicate policy number error
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: 'Policy number must be unique. This policy already exists.',
-      });
-    }
-
+    console.error("Error adding insurance:", error);
     return res.status(500).json({
       success: false,
-      message: 'An error occurred while adding insurance.',
+      message: "An error occurred while adding insurance and mapping policy.",
     });
   }
 };
 
 // Fetch All Insurance Policies (Optional Example)
-exports.getAllInsurance = async (req, res) => {
+exports.submitAndProcessTheClaim = async (req, res) => {
+  const { petId, claimId, claimedAmount, treatmentType, documents } = req.body;
+
+  // Validate request body
+  if (!petId || !claimId || !claimedAmount || !treatmentType || !documents) {
+    return res.status(400).json({
+      success: false,
+      message: 'All fields (petId, claimId, claimedAmount, treatmentType, documents) are required.',
+    });
+  }
+
   try {
-    const insuranceRecords = await Insurance.find();
+    // Retrieve the policy for the given pet ID
+    const insuranceRecord = await Insurance.findOne({ petId });
+    if (!insuranceRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "No insurance policy found for the provided pet ID.",
+      });
+    }
+
+    // Prepare arguments for `preApproval` function (tuple format)
+    const preApprovalArgs = JSON.stringify({
+      petId,
+      claimId,
+      claimedAmount: parseInt(claimedAmount), // Ensure it's an integer
+      treatmentType,
+      documents,
+    });
+
+    console.log("Calling preApproval with args:", preApprovalArgs);
+
+    // Call `preApproval` function on the smart contract
+    const preApprovalResponse = await deployAndExecute("preApproval", preApprovalArgs);
+    console.log("preApproval response:", preApprovalResponse);
+
+    // Extract the preApprovalStatus from the event response
+    if (preApprovalResponse.preApprovalStatus !== "success") {
+      return res.status(400).json({
+        success: false,
+        message: "Claim pre-approval failed.",
+      });
+    }
+
+    // Prepare arguments for `approval` function
+    const approvalArgs = JSON.stringify([claimId, petId]);
+    console.log("Calling approval with args:", approvalArgs);
+
+    // Call `approval` function on the smart contract
+    const approvalResponse = await deployAndExecute("approval", approvalArgs);
+    console.log("approval response:", approvalResponse);
+
+    // Extract approvalStatus and reimbursedAmount from the event response
+    const { approvalStatus, reimbursedAmount } = approvalResponse;
+
+    // Return the final status and reimbursed amount
     return res.status(200).json({
       success: true,
-      data: insuranceRecords,
+      status: approvalStatus === "success" ? "accept" : "decline",
+      reimbursedAmount: approvalStatus === "success" ? reimbursedAmount : 0,
+      claimId: claimId,
+      petId: petId,
     });
   } catch (error) {
-    console.error('Error fetching insurance records:', error);
+    console.error("Error processing claim:", error);
     return res.status(500).json({
       success: false,
-      message: 'An error occurred while fetching insurance records.',
+      message: "An error occurred while processing the claim.",
     });
   }
 };
 
-exports.submitAndProcessTheClaim = async (req, res) => {
-    const { petId, claimId, claimedAmount, treatmentType, documents } = req.body;
-    if (!petId || !claimId || !claimedAmount || !treatmentType || !documents) {
-        return res.status(400).json({
-          success: false,
-          message: 'All fields (petId, claimId, claimedAmount, treatmentType, documents) are required.',
-        });
-      }
-
-      const claimsForThePet=await Insurance.findOne({ claimId }); 
-      console.log("claims for Pets:",claimsForThePet)
-      const petIdFromDb=claimsForThePet.petId
-      if(petIdFromDb!=petId)
-      {
-        return res.status(404).json({
-            sucess: false,
-            message: 'There is no claim added to the petchain for this petId'
-        })
-      }
-     
-      if(!claimsForThePet)
-      {
-        return res.status(404).json({
-            sucess:false,
-            message:"First add the existing insurance to the PetChain"
-        })
-      }
-      //logic for preapproval
-      //logic for approval 
-      
-
-
-
-
-
-    
-}
 
