@@ -69,6 +69,47 @@ exports.registerPet = async (req, res) => {
   }
 };
 
+exports.getPetDetails = async (req, res) => {
+  const { ownerId } = req.params;
+
+  // Validate input
+  if (!ownerId) {
+    return res.status(400).json({ message: 'Owner custom ID is required.' });
+  }
+
+  try {
+    // Find owner details by custom ID
+    const ownerDetails = await UserSignIn.findOne({ custom_id: ownerId });
+    console.log("owner-details :",ownerDetails)
+
+    if (!ownerDetails) {
+      return res.status(404).json({ message: 'Owner not found.' });
+    }
+
+    const ownerName = ownerDetails.name;
+
+    // Find all pets registered to this owner
+    const pets = await PetModel.find({ owner_id: ownerId });
+    console.log("pets :",pets)
+
+    if (!pets || pets.length === 0) {
+      return res.status(404).json({ message: 'No pets found for this owner.' });
+    }
+
+    res.status(200).json({
+      owner: {
+        ownerId: ownerDetails.custom_id,
+        owner_name: ownerName,
+      },
+      pets,
+    });
+  } catch (error) {
+    console.error('Error fetching pet details:', error);
+    res.status(500).json({ message: 'An error occurred while fetching pet details.' });
+  }
+};
+
+
 
 
 
