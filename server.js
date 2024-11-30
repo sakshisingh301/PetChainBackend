@@ -23,11 +23,13 @@ const RegisterRoute = require('./app/routes/Register.js');
 const PetRoute=require('./app/routes/pet.js');
 const petHealthRoutes = require("./app/routes/petHealth.js");
 const TransferRoute = require('./app/routes/transfer.js');
+const insuranceRoute=require('./app/routes/insurance.js')
 app.use('/api/auth', RegisterRoute);
 app.use('/api/register/pets', PetRoute);
 app.use('/api/pets',PetRoute);
 app.use("/api/pet-health", petHealthRoutes);
 app.use('/api/transfer', TransferRoute);
+app.use('/api/insurance',insuranceRoute)
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
