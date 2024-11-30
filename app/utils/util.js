@@ -115,5 +115,46 @@ const storingOwnershipInResdb = async (owner_id,petId,ownershipHash,timestamp) =
     }
   };
 
+  const storingOwnershipTransferEventInResdb = async (
+    ownerId,
+    petId,
+    oldOwnerId,
+    newOwnerId,
+    transferHash
+  ) => {
+    const url = "http://localhost:18000/v1/transactions/commit";
+    const data = {
+      id: ownerId,
+      value: {
+        "pet_id": petId,
+        "ownershipTransfer": {
+          "oldOwnerId": oldOwnerId,
+          "newOwnerId": newOwnerId,
+        },
+        "transferHash": transferHash,
+        "timeStamp": new Date().toISOString(),
+        "status": "completed",
+        "event": "ownership transfer",
+      },
+    };
+  
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("Ownership transfer event logged:", response.data);
+    } catch (error) {
+      console.error(
+        "Error logging ownership transfer event:",
+        error.response ? error.response.data : error.message
+      );
+      throw new Error("Failed to log ownership transfer event.");
+    }
+  };
+  
+  
+
 
   module.exports = { storingOwnershipInResdb,getOwnershipFromResdb,storingLostEventInResdb,storingFoundEventInResdb,getLostHashFromResdb };

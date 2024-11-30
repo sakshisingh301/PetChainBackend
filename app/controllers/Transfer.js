@@ -2,10 +2,11 @@ const TransferRequest = require("../model/transferRequest");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const Pet = require("../model/pet");
+const { getOwnershipFromResdb, storingOwnershipTransferEventInResdb  } = require("../utils/util");
 
 exports.initiateTransfer = async (req, res) => {
   const { petId, currentOwnerEmail, newOwnerEmail } = req.body;
-  console.log('Request received:', req.body);
+  console.log("Request received:", req.body);
 
   if (!petId || !currentOwnerEmail || !newOwnerEmail) {
     return res.status(400).json({ message: "Missing required fields." });
@@ -42,14 +43,15 @@ exports.initiateTransfer = async (req, res) => {
       from: '"PetChain Team" <no-reply@petchain.com>',
       to: newOwnerEmail,
       subject: `Ownership Transfer Request for ${petName}`,
-      text: `Hello,\n\n` +
-            `The current owner of ${petName} (${breed}, ${gender}, ${age}) has initiated a request to transfer ownership to you. ` +
-            `To proceed, please click the link below to approve or reject this request:\n\n` +
-            `${approvalLink}\n\n` +
-            `If you did not request this, please ignore this email.\n\n` +
-            `Thank you for being part of PetChain!\n\n` +
-            `Best Regards,\n` +
-            `PetChain Team`,
+      text:
+        `Hello,\n\n` +
+        `The current owner of ${petName} (${breed}, ${gender}, ${age}) has initiated a request to transfer ownership to you. ` +
+        `To proceed, please click the link below to approve or reject this request:\n\n` +
+        `${approvalLink}\n\n` +
+        `If you did not request this, please ignore this email.\n\n` +
+        `Thank you for being part of PetChain!\n\n` +
+        `Best Regards,\n` +
+        `PetChain Team`,
       html: `
         <p>Hello,</p>
         <p>
@@ -75,7 +77,6 @@ exports.initiateTransfer = async (req, res) => {
         <p>Best Regards,<br>PetChain Team</p>
       `,
     });
-    
 
     res
       .status(200)
@@ -103,19 +104,42 @@ exports.approveTransfer = async (req, res) => {
         .json({ message: "Invalid or expired approval token." });
     }
 
+    const ownershipData = await getOwnershipFromResdb(transferRequest.petId);
+    if (!ownershipData) {
+      return res
+        .status(404)
+        .json({ message: "Ownership details not found in ResDB." });
+    }
+
+    if (ownershipData.owner_id !== transferRequest.currentOwnerEmail) {
+      return res.status(403).json({ message: "Ownership validation failed." });
+    }
+
     transferRequest.status = "approved";
     await transferRequest.save();
 
-    // Trigger smart contract execution (pseudo-code)
-    await executeSmartContract(
+    const result = await executeSmartContract(
       transferRequest.petId,
-      transferRequest.currentOwnerId,
-      req.user.id
+      ownershipData.owner_id,
+      transferRequest.newOwnerEmail
     );
 
-    res
-      .status(200)
-      .json({ message: "Ownership transfer approved and executed." });
+    if (!result.success) {
+      throw new Error("Smart contract execution failed.");
+    }
+
+    const transferHash = result.transactionHash || "dummyHashForTesting"; 
+    await storingOwnershipTransferEventInResdb(
+      ownershipData.id, 
+      transferRequest.petId,
+      ownershipData.id,
+      transferRequest.newOwnerEmail,
+      transferHash
+    );
+
+    res.status(200).json({
+      message: "Ownership transfer approved, executed, and logged in ResDB.",
+    });
   } catch (error) {
     console.error("Error approving transfer:", error);
     res

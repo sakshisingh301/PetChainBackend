@@ -17,15 +17,14 @@ app.use(bodyParser.json())
 const dbConfig = require('./config/database.config.js');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
-mongoose.connect(dbConfig.url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log("Databse Connected Successfully!!");    
-}).catch(err => {
-    console.log('Could not connect to the database', err);
-    process.exit();
-});
+mongoose.connect(dbConfig.url)
+    .then(() => {
+        console.log("Database Connected Successfully!!");
+    })
+    .catch(err => {
+        console.error('Could not connect to the database', err);
+        process.exit(1);
+    });
 app.get('/', (req, res) => {
     res.json({"message": "Hello Crud Node Express"});
 });
