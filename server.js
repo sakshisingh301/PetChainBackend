@@ -2,13 +2,24 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 require('dotenv').config();
+const cors = require('cors');
+
+// Allow all origins or specify the frontend origin
+const corsOptions = {
+  origin: 'http://localhost:3001', // React frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true, // Allow cookies if needed
+};
+app.use(cors(corsOptions));
+
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 const dbConfig = require('./config/database.config.js');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.connect(dbConfig.url, {
-    useNewUrlParser: true
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 }).then(() => {
     console.log("Databse Connected Successfully!!");    
 }).catch(err => {

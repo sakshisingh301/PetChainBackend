@@ -2,14 +2,15 @@ const RegisterModel = require('../model/register');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-
-//Registering Vets,Petowner,insurance provider
-
+// Registering Vets, Pet Owners, and Insurance Providers
 exports.create = async (req, res) => {
   const { name, email, phone, password, role, additional_info } = req.body;
 
   // Validate required fields
-  if (!name || !email || !phone || !password || !role) {
+  if (!name || !email || !role || !password) {
+    if (!name) console.log(' - name');
+    if (!email) console.log(' - email');
+    if (!password) console.log(' - password');
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
@@ -40,7 +41,7 @@ exports.create = async (req, res) => {
     const registerUser = new RegisterModel({
       name,
       email,
-      phone,
+      phone, // Phone is now optional
       password: hashedPassword,
       role,
       additional_info,
@@ -54,50 +55,44 @@ exports.create = async (req, res) => {
       registerUser: data,
     });
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).send({ message: error.message || "Error creating user." });
+    console.error('Error registering user:', error);
+    res.status(500).send({ message: error.message || 'Error creating user.' });
   }
 };
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  // Validate required fields
   if (!email || !password) {
     return res.status(400).json({ message: 'Email and password are required.' });
   }
 
   try {
-    // Check if user exists
     const user = await RegisterModel.findOne({ email });
-    console.log(user)
     if (!user) {
       return res.status(404).json({ message: 'User not found. Please register first.' });
     }
 
-    // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid password. Please try again.' });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role }, // Payload
-      'yourSecretKey', // Secret key (should be stored in environment variables)
-      { expiresIn: '1h' } // Token expiration
+      { id: user._id, role: user.role },
+      'yourSecretKey', 
+      { expiresIn: '1h' }
     );
 
-    // Send success response
     res.status(200).json({
       message: 'Login successful!',
       user: {
-        id: user.custom_id || user._id, // Use custom_id if available
-        name: user.name,
+        id:  user.custom_id || user._id,
+        name: user.name, // Include name
         email: user.email,
         role: user.role,
       },
-      token, // JWT token for client to use
+      token,
     });
   } catch (error) {
     console.error('Error during login:', error);
