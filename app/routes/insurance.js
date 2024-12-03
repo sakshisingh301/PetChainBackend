@@ -1,5 +1,5 @@
 const express = require('express');
-const {addInsuranceToPetChain}=require("../controllers/InsuranceController")
+const {addInsuranceToPetChain,submitAndProcessTheClaim}=require("../controllers/InsuranceController")
 
 
 
@@ -9,7 +9,7 @@ const router = express.Router();
 
 
 router.post('/claim/add',addInsuranceToPetChain)
-router.post('/claim/submit',)
+router.post('/claim/submit',submitAndProcessTheClaim)
 
 
 

@@ -10,6 +10,7 @@ const InsuranceSchema = new mongoose.Schema({
     endDate: { type: Date, required: true },
   },
   createdAt: { type: Date, default: Date.now },
+  claimId:{type:String}
 });
 
 module.exports = mongoose.model('Insurance', InsuranceSchema);
