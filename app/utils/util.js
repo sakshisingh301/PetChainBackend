@@ -1,4 +1,5 @@
 const axios=require('axios')
+const UserSignIn = require("../model/register.js");
 
 const storingOwnershipInResdb = async (owner_id,petId,ownershipHash,timestamp) => {
     const url = 'http://127.0.0.1:18000/v1/transactions/commit';
@@ -115,6 +116,40 @@ const storingOwnershipInResdb = async (owner_id,petId,ownershipHash,timestamp) =
     }
   };
 
+  const fetchCustomIdFromMongoDB = async (userEmail) => {
+    try {
+      const user = await UserSignIn.findOne({ email: userEmail });
+      if (!user) {
+        throw new Error("User not found in MongoDB.");
+      }
+      console.log("Fetched Custom ID:", user.custom_id);
+      return user.custom_id;
+    } catch (error) {
+      console.error("Error fetching custom ID from MongoDB:", error.message);
+      throw error;
+    }
+  };
+
+  const fetchPetIdFromResDB = async (ownerId) => {
+    try {
+      const url = `http://127.0.0.1:18000/v1/transactions/${ownerId}`;
+      const response = await axios.get(url, {
+        headers: { "Content-Type": "application/json" },
+      });
+  
+      if (response.data && response.data.value) {
+        const { pet_id } = response.data.value;
+        console.log("Fetched Pet ID:", pet_id);
+        return response.data.value; 
+      } else {
+        throw new Error("No pet details found for the owner in ResDB.");
+      }
+    } catch (error) {
+      console.error("Error fetching pet ID from ResDB:", error.message);
+      throw error;
+    }
+  };
+
   const storingOwnershipTransferEventInResdb = async (
     ownerId,
     petId,
@@ -157,4 +192,4 @@ const storingOwnershipInResdb = async (owner_id,petId,ownershipHash,timestamp) =
   
 
 
-  module.exports = { storingOwnershipInResdb,getOwnershipFromResdb,storingLostEventInResdb,storingFoundEventInResdb,getLostHashFromResdb };
+  module.exports = { storingOwnershipInResdb,getOwnershipFromResdb,storingLostEventInResdb,storingFoundEventInResdb,getLostHashFromResdb, fetchCustomIdFromMongoDB, fetchPetIdFromResDB, storingOwnershipTransferEventInResdb };

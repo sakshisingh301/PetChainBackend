@@ -1,8 +1,9 @@
 const TransferRequest = require("../model/transferRequest");
-const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const Pet = require("../model/pet");
-const { getOwnershipFromResdb, storingOwnershipTransferEventInResdb  } = require("../utils/util");
+const nodemailer = require("nodemailer");
+const { executeSmartContract } = require("../contracts/execute");
+const { getOwnershipFromResdb, storingOwnershipTransferEventInResdb, fetchCustomIdFromMongoDB, fetchPetIdFromResDB } = require("../utils/util");
 
 exports.initiateTransfer = async (req, res) => {
   const { petId, currentOwnerEmail, newOwnerEmail } = req.body;
@@ -38,7 +39,7 @@ exports.initiateTransfer = async (req, res) => {
       },
     });
 
-    const approvalLink = `${process.env.FRONTEND_URL}/approve-transfer?token=${approvalToken}`;
+    const approvalLink = `${process.env.FRONTEND_URL}/api/transfer/approve-transfer?token=${approvalToken}`;
     await transporter.sendMail({
       from: '"PetChain Team" <no-reply@petchain.com>',
       to: newOwnerEmail,
@@ -90,10 +91,10 @@ exports.initiateTransfer = async (req, res) => {
 };
 
 exports.approveTransfer = async (req, res) => {
+  console.log("Approve Transfer func hit");
   const { token } = req.query;
 
   try {
-    // Find the transfer request
     const transferRequest = await TransferRequest.findOne({
       approvalToken: token,
     });
@@ -104,31 +105,42 @@ exports.approveTransfer = async (req, res) => {
         .json({ message: "Invalid or expired approval token." });
     }
 
-    const ownershipData = await getOwnershipFromResdb(transferRequest.petId);
-    if (!ownershipData) {
-      return res
-        .status(404)
-        .json({ message: "Ownership details not found in ResDB." });
+    const currentOwnerId = await fetchCustomIdFromMongoDB(transferRequest.currentOwnerEmail);
+    const ownershipData = await fetchPetIdFromResDB(currentOwnerId);
+
+    if (!ownershipData || ownershipData.pet_id !== transferRequest.petId) {
+      return res.status(404).json({ message: "Ownership validation failed." });
     }
 
-    if (ownershipData.owner_id !== transferRequest.currentOwnerEmail) {
-      return res.status(403).json({ message: "Ownership validation failed." });
-    }
+    const newOwnerId = await fetchCustomIdFromMongoDB(transferRequest.newOwnerEmail);
 
     transferRequest.status = "approved";
     await transferRequest.save();
 
+    const contractAddress = process.env.CONTRACT_ADDRESS; 
+    const senderAddress = process.env.ACCOUNT_ADDRESS; 
+    const functionName = "balanceOf(address)";
+    const args = "0x1be8e78d765a2e63339fc99a66320db73158a35a";
+
     const result = await executeSmartContract(
-      transferRequest.petId,
-      ownershipData.owner_id,
-      transferRequest.newOwnerEmail
+      contractAddress,
+      senderAddress,
+      functionName,
+      args
     );
+
+    console.log("Smart contract execution result:", result);
+
 
     if (!result.success) {
       throw new Error("Smart contract execution failed.");
     }
 
-    const transferHash = result.transactionHash || "dummyHashForTesting"; 
+    const transferHash = crypto
+      .createHash("sha256")
+      .update(`${transferRequest.petId}${transferRequest.currentOwnerEmail}${transferRequest.newOwnerEmail}`)
+      .digest("hex");
+
     await storingOwnershipTransferEventInResdb(
       ownershipData.id, 
       transferRequest.petId,
