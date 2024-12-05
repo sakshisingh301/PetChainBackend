@@ -1,25 +1,11 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const { addVaccinationRecord, getVaccinationRecords } = require("../controllers/petHealthController");
+const { savePetHealth, getPetHealth, upload } = require('../controllers/petHealthController');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// Route to add vaccination record (POST)
-router.post("/vaccination", upload.single("file"), addVaccinationRecord);
-
-// Route to get vaccination records (GET)
-router.get("/vaccinations", getVaccinationRecords);
+// Route for saving pet health data, including file upload
+router.post('/save', upload.single('healthFile'), savePetHealth);
+//app.post('/api/pet-health/save', petHealthController.savePetHealth);
+// Route for getting pet health data
+router.get('/:petId', getPetHealth);
 
 module.exports = router;

@@ -1,37 +1,72 @@
-const PetHealth = require("../model/petHealth");
+const PetHealth = require('../model/petHealth');
 
-// Add a vaccination record
-exports.addVaccinationRecord = async (req, res) => {
+const multer = require('multer');
+const path = require('path');
+
+// Configure storage for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Directory to store files
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+// Initialize multer with storage configuration
+const upload = multer({ storage });
+
+
+// Create or Update Pet Health Record
+const savePetHealth = async (req, res) => {
+  const { petId, name, vaccinationRecords, allergies, pastTreatments, minorIllnessRecords } = req.body;
+
   try {
-    const { petId, vaccinationDate, vaccineType, nextDueDate, allergies, pastTreatments, minorIllnessRecords, vetId } = req.body;
+    let petHealth = await PetHealth.findOne({ petId });
 
-    const newRecord = new PetHealth({
-      petId,
-      vaccinationDate,
-      vaccineType,
-      nextDueDate,
-      allergies: allergies ? allergies.split(",") : [],
-      pastTreatments: pastTreatments ? pastTreatments.split(",") : [],
-      minorIllnessRecords: minorIllnessRecords ? minorIllnessRecords.split(",") : [],
-      file: req.file ? req.file.filename : null,
-      vetId,
-    });
+    if (petHealth) {
+      // Update existing record
+      petHealth.name = name || petHealth.name;
+      petHealth.vaccinationRecords = vaccinationRecords || petHealth.vaccinationRecords;
+      petHealth.allergies = allergies || petHealth.allergies;
+      petHealth.pastTreatments = pastTreatments || petHealth.pastTreatments;
+      petHealth.minorIllnessRecords = minorIllnessRecords || petHealth.minorIllnessRecords;
+    } else {
+      // Create new record
+      petHealth = new PetHealth({
+        petId,
+        name,
+        vaccinationRecords,
+        allergies,
+        pastTreatments,
+        minorIllnessRecords,
+      });
+    }
 
-    await newRecord.save();
-    res.status(200).json({ message: "Vaccination record added successfully!" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to add vaccination record" });
+    await petHealth.save();
+    res.status(201).json({ message: 'Pet health data saved successfully', petHealth });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// Get all vaccination records
-exports.getVaccinationRecords = async (req, res) => {
+// Fetch Pet Health Data
+const getPetHealth = async (req, res) => {
+  const { petId } = req.params;
+
   try {
-    const records = await PetHealth.find();
-    res.status(200).json(records);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to retrieve vaccination records" });
+    const petHealth = await PetHealth.findOne({ petId });
+    if (!petHealth) {
+      return res.status(404).json({ message: 'Pet health data not found' });
+    }
+    res.status(200).json(petHealth);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
+};
+
+module.exports = {
+  savePetHealth,
+  getPetHealth,
+  upload,
 };

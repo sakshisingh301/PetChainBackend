@@ -1,5 +1,6 @@
+uploads/
 .env
 node_modules/
 .vscode/
-.package-lock.json
 .config.yaml
+package-lock.json
