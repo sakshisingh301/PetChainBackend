@@ -5,8 +5,8 @@ const petHealthSchema = new mongoose.Schema({
   name: { type: String},
   vaccinationRecords: [
     {
-      vaccinationDate: { type: Date, required: true },
-      vaccineType: { type: String, required: true },
+      vaccinationDate: { type: Date},
+      vaccineType: { type: String},
       nextDueDate: { type: Date },
       file: { type: String }, // File path or URL to the uploaded file
     },

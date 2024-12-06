@@ -33,47 +33,64 @@ const upload = multer({ storage }).fields([
 const savePetHealth = async (req, res) => {
   const { petId, name, vaccinationRecords, allergies, pastTreatments, minorIllnessRecords } = req.body;
 
-  // Ensure the uploaded file path is correctly retrieved
-  //const uploadedFilePath = req.files ? req.files['vaccinationRecords[0][file]']?.[0]?.path : null;
-  //const uploadedFilePath=1;
-  const uploadedFile = req.files ? req.files['vaccinationRecords[0][file]']?.[0] : null;
+  console.log("=== Incoming Request ===");
+  console.log("Request Body:", req.body);
+  console.log("Uploaded Files:", req.files);
 
-  // If a file was uploaded, save the file path
+  // Check for uploaded vaccination file
+  const uploadedFile = req.files ? req.files['vaccinationRecords[0][file]']?.[0] : null;
   const uploadedFilePath = uploadedFile ? uploadedFile.path : null;
+
   try {
+    console.log("Looking for existing Pet Health record...");
     let petHealth = await PetHealth.findOne({ petId });
 
     if (petHealth) {
-      // Update existing record-check here
+      console.log("Updating existing Pet Health record...");
       petHealth.name = name || petHealth.name;
-      petHealth.vaccinationRecords = vaccinationRecords || petHealth.vaccinationRecords;
-      if (uploadedFilePath) {
-        petHealth.vaccinationRecords[0].file = uploadedFilePath; 
-      }
-
       petHealth.allergies = allergies || petHealth.allergies;
       petHealth.pastTreatments = pastTreatments || petHealth.pastTreatments;
       petHealth.minorIllnessRecords = minorIllnessRecords || petHealth.minorIllnessRecords;
+
+      // Handle vaccinationRecords (optional)
+      if (vaccinationRecords) {
+        petHealth.vaccinationRecords = vaccinationRecords;
+      }
+      if (uploadedFilePath) {
+        if (petHealth.vaccinationRecords.length > 0) {
+          petHealth.vaccinationRecords[0].file = uploadedFilePath;
+        } else {
+          petHealth.vaccinationRecords.push({ file: uploadedFilePath });
+        }
+      }
     } else {
-      // Create new record
+      console.log("Creating new Pet Health record...");
       petHealth = new PetHealth({
         petId,
         name,
-        vaccinationRecords: vaccinationRecords ? vaccinationRecords.map(record => {
-          if (uploadedFilePath && !record.file) {
-            record.file = uploadedFilePath; // Add file path if missing
-          }
-          return record;
-        }) : [{ file: uploadedFilePath }], // Add new record with file path if needed
+        vaccinationRecords: vaccinationRecords
+          ? vaccinationRecords.map(record => {
+              if (uploadedFilePath && !record.file) {
+                record.file = uploadedFilePath; // Add file path if missing
+              }
+              return record;
+            })
+          : uploadedFilePath
+          ? [{ file: uploadedFilePath }]
+          : [], // Optional vaccinationRecords
         allergies,
         pastTreatments,
         minorIllnessRecords,
       });
     }
 
+    console.log("Saving Pet Health record...");
     await petHealth.save();
+    console.log("Pet Health record saved successfully:", petHealth);
+
     res.status(201).json({ message: 'Pet health data saved successfully', petHealth });
   } catch (err) {
+    console.error("Error saving Pet Health data:", err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
