@@ -153,7 +153,7 @@ exports.approveTransfer = async (req, res) => {
       message: "Ownership transfer approved, executed, and logged in ResDB.",
     });
   } catch (error) {
-    console.error("Error approving transfer:", error);
+    console.error("Error approving transfer:", error.message);
     res
       .status(500)
       .json({ message: "An error occurred while approving the transfer." });
