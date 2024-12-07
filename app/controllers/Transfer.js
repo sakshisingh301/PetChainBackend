@@ -40,7 +40,7 @@ exports.initiateTransfer = async (req, res) => {
       },
     });
 
-    const approvalLink = `${process.env.FRONTEND_URL}/approve-transfer?token=${approvalToken}`;
+    const approvalLink = `${process.env.BACKEND_URL}/api/transfer/approve-transfer?token=${approvalToken}`;
     await transporter.sendMail({
       from: '"PetChain Team" <no-reply@petchain.com>',
       to: newOwnerEmail,
@@ -153,7 +153,7 @@ exports.approveTransfer = async (req, res) => {
     res.send(`
       <script>
         alert('Ownership transfer approved and logged successfully!');
-        window.location.href = '${process.env.FRONTEND_URL}pprofile';
+        window.location.href = '${process.env.FRONTEND_URL}/pprofile?status=success';
       </script>
     `);
   } catch (error) {
