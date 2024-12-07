@@ -2,7 +2,7 @@ const TransferRequest = require("../model/transferRequest");
 const crypto = require("crypto");
 const Pet = require("../model/pet");
 const nodemailer = require("nodemailer");
-const { executeSmartContract } = require("../contracts/execute");
+// const { executeSmartContract } = require("../contracts/execute");
 const { getOwnershipFromResdb, storingOwnershipTransferEventInResdb, fetchCustomIdFromMongoDB, fetchPetIdFromResDB } = require("../utils/util");
 
 exports.initiateTransfer = async (req, res) => {
@@ -86,7 +86,7 @@ exports.initiateTransfer = async (req, res) => {
     console.error("Error initiating transfer:", error);
     res
       .status(500)
-      .json({ message: "An error occurred while initiating the transfer." });
+      .json({ message: "An error occurred while initiating the transfer process" });
   }
 };
 
@@ -106,34 +106,21 @@ exports.approveTransfer = async (req, res) => {
     }
 
     const currentOwnerId = await fetchCustomIdFromMongoDB(transferRequest.currentOwnerEmail);
-    const ownershipData = await fetchPetIdFromResDB(currentOwnerId);
+    if (!currentOwnerId) {
+      return res.status(404).json({ message: "Current owner not found." });
+    }
+    console.log("Current Owner ID:", currentOwnerId);
 
-    if (!ownershipData || ownershipData.pet_id !== transferRequest.petId) {
+    const ownershipData = await getOwnershipFromResdb(currentOwnerId);
+    console.log("Ownership Data Pet ID:", ownershipData.value.pet_id);
+    console.log("Transfer Request Pet ID:", transferRequest.petId);
+    if (!ownershipData || ownershipData.value.pet_id !== transferRequest.petId) {
       return res.status(404).json({ message: "Ownership validation failed." });
     }
 
     const newOwnerId = await fetchCustomIdFromMongoDB(transferRequest.newOwnerEmail);
-
-    transferRequest.status = "approved";
-    await transferRequest.save();
-
-    const contractAddress = process.env.CONTRACT_ADDRESS; 
-    const senderAddress = process.env.ACCOUNT_ADDRESS; 
-    const functionName = "balanceOf(address)";
-    const args = "0x1be8e78d765a2e63339fc99a66320db73158a35a";
-
-    const result = await executeSmartContract(
-      contractAddress,
-      senderAddress,
-      functionName,
-      args
-    );
-
-    console.log("Smart contract execution result:", result);
-
-
-    if (!result.success) {
-      throw new Error("Smart contract execution failed.");
+    if (!newOwnerId) {
+      return res.status(404).json({ message: "New owner not found." });
     }
 
     const transferHash = crypto
@@ -142,12 +129,24 @@ exports.approveTransfer = async (req, res) => {
       .digest("hex");
 
     await storingOwnershipTransferEventInResdb(
-      ownershipData.id, 
-      transferRequest.petId,
       ownershipData.id,
-      transferRequest.newOwnerEmail,
-      transferHash
+      transferRequest.petId, 
+      newOwnerId, 
+      transferRequest.newOwnerEmail, 
+      transferHash 
     );
+
+    console.log("Ownership transfer event logged in ResDB successfully.");
+
+    transferRequest.status = "approved";
+    await transferRequest.save();
+
+    // const result = await executeSmartContract(
+    //   contractAddress,
+    //   senderAddress,
+    //   functionName,
+    //   args
+    // );
 
     res.status(200).json({
       message: "Ownership transfer approved, executed, and logged in ResDB.",
@@ -159,3 +158,28 @@ exports.approveTransfer = async (req, res) => {
       .json({ message: "An error occurred while approving the transfer." });
   }
 };
+
+
+exports.getTransfers = async (req, res) => {
+  const { ownerEmail } = req.params;
+
+  if (!ownerEmail) {
+    return res.status(400).json({ message: "Owner email is required." });
+  }
+
+  try {
+    const transferRequests = await TransferRequest.find({
+      currentOwnerEmail: ownerEmail,
+    });
+
+    if (!transferRequests || transferRequests.length === 0) {
+      return res.status(404).json({ message: "No transfer requests found." });
+    }
+
+    res.status(200).json(transferRequests);
+  } catch (error) {
+    console.error("Error fetching transfer requests:", error);
+    res.status(500).json({ message: "An error occurred while fetching transfer requests." });
+  }
+};
+
