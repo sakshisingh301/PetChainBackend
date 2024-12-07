@@ -7,8 +7,8 @@ const transferRequestSchema = new mongoose.Schema({
   approvalToken: { type: String, required: true },
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected"],
-    default: "pending",
+    enum: ["Pending approval from New Owner", "Approved & Executed", "Rejected"],
+    default: "Pending approval from New Owner",
   },
   createdAt: { type: Date, default: Date.now },
 });

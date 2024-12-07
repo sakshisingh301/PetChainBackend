@@ -28,6 +28,7 @@ exports.initiateTransfer = async (req, res) => {
       currentOwnerEmail,
       newOwnerEmail,
       approvalToken,
+      status: "Pending approval from New Owner",
     });
     await transferRequest.save();
 
@@ -39,7 +40,7 @@ exports.initiateTransfer = async (req, res) => {
       },
     });
 
-    const approvalLink = `${process.env.FRONTEND_URL}/api/transfer/approve-transfer?token=${approvalToken}`;
+    const approvalLink = `${process.env.FRONTEND_URL}/approve-transfer?token=${approvalToken}`;
     await transporter.sendMail({
       from: '"PetChain Team" <no-reply@petchain.com>',
       to: newOwnerEmail,
@@ -100,9 +101,12 @@ exports.approveTransfer = async (req, res) => {
     });
 
     if (!transferRequest) {
-      return res
-        .status(404)
-        .json({ message: "Invalid or expired approval token." });
+      res.send(`
+        <script>
+          alert('Invalid or expired approval token.');
+        </script>
+      `);
+      return;
     }
 
     const currentOwnerId = await fetchCustomIdFromMongoDB(transferRequest.currentOwnerEmail);
@@ -115,7 +119,12 @@ exports.approveTransfer = async (req, res) => {
     console.log("Ownership Data Pet ID:", ownershipData.value.pet_id);
     console.log("Transfer Request Pet ID:", transferRequest.petId);
     if (!ownershipData || ownershipData.value.pet_id !== transferRequest.petId) {
-      return res.status(404).json({ message: "Ownership validation failed." });
+      res.send(`
+        <script>
+          alert('Current Ownership validation failed. Rejecting proposal');
+        </script>
+      `);
+      return;
     }
 
     const newOwnerId = await fetchCustomIdFromMongoDB(transferRequest.newOwnerEmail);
@@ -130,32 +139,34 @@ exports.approveTransfer = async (req, res) => {
 
     await storingOwnershipTransferEventInResdb(
       ownershipData.id,
-      transferRequest.petId, 
-      newOwnerId, 
-      transferRequest.newOwnerEmail, 
-      transferHash 
+      transferRequest.petId,
+      newOwnerId,
+      transferRequest.newOwnerEmail,
+      transferHash
     );
 
     console.log("Ownership transfer event logged in ResDB successfully.");
 
-    transferRequest.status = "approved";
+    transferRequest.status = "Approved & Executed";
     await transferRequest.save();
 
-    // const result = await executeSmartContract(
-    //   contractAddress,
-    //   senderAddress,
-    //   functionName,
-    //   args
-    // );
-
-    res.status(200).json({
-      message: "Ownership transfer approved, executed, and logged in ResDB.",
-    });
+    res.send(`
+      <script>
+        alert('Ownership transfer approved and logged successfully!');
+        window.location.href = '${process.env.FRONTEND_URL}pprofile';
+      </script>
+    `);
   } catch (error) {
     console.error("Error approving transfer:", error.message);
-    res
-      .status(500)
-      .json({ message: "An error occurred while approving the transfer." });
+    if (transferRequest) {
+      transferRequest.status = "Rejected";
+      await transferRequest.save();
+    }
+    res.status(500).send(`
+      <script>
+        alert('An error occurred while approving the transfer. Transfer rejected.');
+      </script>
+    `);
   }
 };
 
@@ -178,7 +189,7 @@ exports.getTransfers = async (req, res) => {
 
     res.status(200).json(transferRequests);
   } catch (error) {
-    console.error("Error fetching transfer requests:", error);
+    console.error("Error fetching transfer requests:", error.message);
     res.status(500).json({ message: "An error occurred while fetching transfer requests." });
   }
 };
