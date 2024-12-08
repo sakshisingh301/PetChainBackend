@@ -1,9 +1,9 @@
 const TransferRequest = require("../model/transferRequest");
 const crypto = require("crypto");
 const Pet = require("../model/pet");
+const UserSignIn = require("../model/register")
 const nodemailer = require("nodemailer");
-// const { executeSmartContract } = require("../contracts/execute");
-const { getOwnershipFromResdb, storingOwnershipTransferEventInResdb, fetchCustomIdFromMongoDB, fetchPetIdFromResDB } = require("../utils/util");
+const { getOwnershipFromResdb, storingOwnershipTransferEventInResdb } = require("../utils/util");
 
 exports.initiateTransfer = async (req, res) => {
   const { petId, currentOwnerEmail, newOwnerEmail } = req.body;
@@ -94,9 +94,10 @@ exports.initiateTransfer = async (req, res) => {
 exports.approveTransfer = async (req, res) => {
   console.log("Approve Transfer func hit");
   const { token } = req.query;
+  let transferRequest;
 
   try {
-    const transferRequest = await TransferRequest.findOne({
+    transferRequest = await TransferRequest.findOne({
       approvalToken: token,
     });
 
@@ -109,11 +110,11 @@ exports.approveTransfer = async (req, res) => {
       return;
     }
 
-    const currentOwnerId = await fetchCustomIdFromMongoDB(transferRequest.currentOwnerEmail);
-    if (!currentOwnerId) {
+    const currentOwner = await UserSignIn.findOne({ email: transferRequest.currentOwnerEmail });
+    if (!currentOwner) {
       return res.status(404).json({ message: "Current owner not found." });
     }
-    console.log("Current Owner ID:", currentOwnerId);
+    const currentOwnerId = currentOwner.custom_id;
 
     const ownershipData = await getOwnershipFromResdb(currentOwnerId);
     console.log("Ownership Data Pet ID:", ownershipData.value.pet_id);
@@ -127,10 +128,11 @@ exports.approveTransfer = async (req, res) => {
       return;
     }
 
-    const newOwnerId = await fetchCustomIdFromMongoDB(transferRequest.newOwnerEmail);
-    if (!newOwnerId) {
+    const newOwner = await UserSignIn.findOne({ email: transferRequest.newOwnerEmail });
+    if (!newOwner) {
       return res.status(404).json({ message: "New owner not found." });
     }
+    const newOwnerId = newOwner.custom_id;
 
     const transferHash = crypto
       .createHash("sha256")
@@ -138,7 +140,7 @@ exports.approveTransfer = async (req, res) => {
       .digest("hex");
 
     await storingOwnershipTransferEventInResdb(
-      ownershipData.id,
+      currentOwnerId,
       transferRequest.petId,
       newOwnerId,
       transferRequest.newOwnerEmail,
@@ -146,6 +148,12 @@ exports.approveTransfer = async (req, res) => {
     );
 
     console.log("Ownership transfer event logged in ResDB successfully.");
+
+    const pet = await Pet.findOne({ petId: transferRequest.petId });
+    pet.owner_id = newOwner; 
+    pet.owner_email = transferRequest.newOwnerEmail; 
+    pet.owner_name = newOwner.name; 
+    await pet.save();
 
     transferRequest.status = "Approved & Executed";
     await transferRequest.save();
@@ -169,7 +177,6 @@ exports.approveTransfer = async (req, res) => {
     `);
   }
 };
-
 
 exports.getTransfers = async (req, res) => {
   const { ownerEmail } = req.params;

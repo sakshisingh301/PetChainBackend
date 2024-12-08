@@ -7,7 +7,8 @@ const petSchema = new mongoose.Schema({
     ref: 'UserSignIn', // Reference the User model
     required: true,
   },
-  owner_name: { type: String, required: false }, // Store owner's name
+  owner_name: { type: String, required: false },
+  owner_email: { type: String, required: false }, 
   name: { type: String, required: true },
   breed: { type: String, required: true },
   age: { type: Number, required: true },

@@ -116,20 +116,6 @@ const getLostHashFromResdb = async (ownerId) => {
   }
 };
 
-const fetchCustomIdFromMongoDB = async (userEmail) => {
-  try {
-    const user = await UserSignIn.findOne({ email: userEmail });
-    if (!user) {
-      throw new Error("User not found in MongoDB.");
-    }
-    console.log("Fetched Custom ID:", user.custom_id);
-    return user.custom_id;
-  } catch (error) {
-    console.error("Error fetching custom ID from MongoDB:", error.message);
-    throw error;
-  }
-};
-
 const fetchPetIdFromResDB = async (ownerId) => {
   try {
     const url = `http://127.0.0.1:18000/v1/transactions/${ownerId}`;
@@ -197,4 +183,4 @@ const storingOwnershipTransferEventInResdb = async (
 
 
 
-module.exports = { storingOwnershipInResdb, getOwnershipFromResdb, storingLostEventInResdb, storingFoundEventInResdb, getLostHashFromResdb, fetchCustomIdFromMongoDB, fetchPetIdFromResDB, storingOwnershipTransferEventInResdb };
+module.exports = { storingOwnershipInResdb, getOwnershipFromResdb, storingLostEventInResdb, storingFoundEventInResdb, getLostHashFromResdb, fetchPetIdFromResDB, storingOwnershipTransferEventInResdb };
