@@ -30,6 +30,7 @@ exports.registerPet = async (req, res) => {
     }
     const ownerName=ownerDetails.name
     const ownerCustomId=ownerDetails.custom_id
+    const ownerEmail=ownerDetails.email
     const petId = `PET_${new Date().getTime()}`;
 
 
@@ -37,6 +38,7 @@ exports.registerPet = async (req, res) => {
     const newPet = new PetModel({
       owner_id: ownerCustomId,
       owner_name: ownerName,
+      owner_email:ownerEmail,
       petId:petId,
       name,
       breed,

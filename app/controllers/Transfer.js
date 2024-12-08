@@ -92,7 +92,7 @@ exports.initiateTransfer = async (req, res) => {
 };
 
 exports.approveTransfer = async (req, res) => {
-  console.log("Approve Transfer func hit");
+  console.log("Approve Transfer api hit");
   const { token } = req.query;
   let transferRequest;
 
@@ -150,7 +150,7 @@ exports.approveTransfer = async (req, res) => {
     console.log("Ownership transfer event logged in ResDB successfully.");
 
     const pet = await Pet.findOne({ petId: transferRequest.petId });
-    pet.owner_id = newOwner; 
+    pet.owner_id = newOwnerId; 
     pet.owner_email = transferRequest.newOwnerEmail; 
     pet.owner_name = newOwner.name; 
     await pet.save();

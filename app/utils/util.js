@@ -1,5 +1,4 @@
 const axios = require('axios')
-const UserSignIn = require("../model/register.js");
 
 const storingOwnershipInResdb = async (owner_id, petId, ownershipHash, timestamp) => {
   const url = 'http://127.0.0.1:18000/v1/transactions/commit';
@@ -179,8 +178,5 @@ const storingOwnershipTransferEventInResdb = async (
     throw new Error("Failed to log ownership transfer event.");
   }
 };
-
-
-
 
 module.exports = { storingOwnershipInResdb, getOwnershipFromResdb, storingLostEventInResdb, storingFoundEventInResdb, getLostHashFromResdb, fetchPetIdFromResDB, storingOwnershipTransferEventInResdb };
