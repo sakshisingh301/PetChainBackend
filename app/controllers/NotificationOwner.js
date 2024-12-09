@@ -18,6 +18,7 @@ exports.notifyOwner = async (req, res) => {
 
     // 2. Find the owner by ownerId in the pet record
     const owner = await UserModel.findOne({ custom_id: pet.owner_id });
+
     console.log("owner is :",owner)
     if (!owner) {
       return res.status(404).json({ message: 'Owner not found.' });
@@ -62,7 +63,7 @@ const sendEmailToOwner = async (ownerEmail, petName, finderAddress) => {
 
   const mailOptions = {
     from: '"PetChain" <petchain@example.com>',
-    to: "binarybeast001@gmail.com",
+    to: ownerEmail,
     subject: `Good news! Your pet "${petName}" has been located.`,
     text: `Hello,\n\nYour pet "${petName}" has been reported near the following address:\n\n${finderAddress}.\n\nPlease log in to PetChain for more details.`,
   };
