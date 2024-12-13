@@ -1,5 +1,5 @@
                         PetChain: Blockchain-Based Pet Health and Identification Platform
-Overview
+**Overview**
 
 PetChain is a blockchain-powered platform designed to simplify pet registration, health record management, lost and found services, ownership transfers, and insurance claims. By leveraging the immutability and transparency of blockchain technology, PetChain ensures secure and tamper-proof management of pet-related information.
 
@@ -56,3 +56,27 @@ Pet Profile: A comprehensive profile is created and displayed on the owner’s d
 **Smart Contract Pre-Approval:** Claims are pre-validated by smart contracts before submission to the insurance provider.
 
 **Claim Status Updates:** Owners are notified about claim status (approved/denied) directly on the platform.
+
+**Technology Stack**
+
+**Frontend**
+
+React.js , MaterialUI
+
+**Backend**
+
+Node.js, express,js
+
+
+
+**Database**
+
+ResilientDB (Blockchain-based database)
+
+mongoDB
+
+**Blockchain**
+
+Practical Byzantine Fault Tolerance (PBFT)  blockchain protocol for logging events and managing smart contracts
+
+
