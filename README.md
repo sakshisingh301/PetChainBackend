@@ -70,4 +70,6 @@ mongoDB
 
 Practical Byzantine Fault Tolerance (PBFT)  blockchain protocol for logging events and managing smart contracts
 
+For more info check out this blog [PetChain](https://blog.resilientdb.com/2024/12/08/PetChain.html)
+
 
