@@ -52,23 +52,20 @@ PetChain is a blockchain-powered platform designed to simplify pet registration,
 **Technology Stack**
 
 **Frontend**
-
 React.js , MaterialUI
 
 **Backend**
-
-Node.js, express,js
+Node.js, expressjs
 
 
 **Database**
-
 ResilientDB (Blockchain-based database)
-
-mongoDB
+, mongoDB
 
 **Blockchain**
-
 Practical Byzantine Fault Tolerance (PBFT)  blockchain protocol for logging events and managing smart contracts
+
+Link for frontend repo [PetChainPlus](https://github.com/nehapradeep/PetChainPlus)
 
 For more info check out this blog [PetChain](https://blog.resilientdb.com/2024/12/08/PetChain.html)
 
