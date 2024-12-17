@@ -30,7 +30,7 @@ exports.searchPet = async (req, res) => {
         {
           return res.status(404).json({ message: 'The pet that you are searching is not lost' });
         }
-       
+        
         if (!pet) {
           return res.status(404).json({ message: 'Pet not found.' });
         }
@@ -46,7 +46,7 @@ exports.searchPet = async (req, res) => {
             gender: pet.gender,
             color: pet.color,
             distinctive_marks: pet.distinctive_marks,
-             owner_name: ownerName
+            owner_name: ownerName
           },
         });
       } catch (error) {

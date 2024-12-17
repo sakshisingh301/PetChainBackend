@@ -3,7 +3,6 @@ const PetHealth = require('../model/petHealth');
 const multer = require('multer');
 const path = require('path');
 
-// Configure storage for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/'); // Directory to store files

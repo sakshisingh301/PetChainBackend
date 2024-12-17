@@ -1,10 +1,10 @@
 const PetModel = require('../model/pet')
 const mongoose = require('mongoose');
 const UserModel = require('../model/register');
-const nodemailer = require('nodemailer'); // For email notifications
-const NotificationModel = require('../model/notification'); // For in-app notifications
+const nodemailer = require('nodemailer'); 
+const NotificationModel = require('../model/notification');
 
-// Notify owner about the pet
+
 exports.notifyOwner = async (req, res) => {
   const { petId, finderAddress } = req.body;
 
@@ -51,7 +51,7 @@ exports.notifyOwner = async (req, res) => {
   }
 };
 
-// Helper function to send email
+
 const sendEmailToOwner = async (ownerEmail, petName, finderAddress) => {
   const transporter = nodemailer.createTransport({
     service: 'Gmail', 

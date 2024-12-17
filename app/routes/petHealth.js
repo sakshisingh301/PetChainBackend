@@ -6,8 +6,6 @@ const { savePetHealth, getPetHealth, upload } = require('../controllers/petHealt
 //router.post('/save', upload.single('healthFile'), savePetHealth);
 router.post('/save', upload, savePetHealth);
 
-//app.post('/api/pet-health/save', petHealthController.savePetHealth);
-// Route for getting pet health data
 router.get('/:petId', getPetHealth);
 
 module.exports = router;
