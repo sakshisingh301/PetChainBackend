@@ -7,47 +7,14 @@ PetChain is a blockchain-powered platform designed to simplify pet registration,
 
 **1. Pet Registration**
 
-**Account Creation:** Pet owners can create accounts by providing personal details and setting up login credentials. Verification is performed via email or phone.
-
-**Pet Registration Form:** Owners can register their pets with details and Pet profile will be created.
-
 **2. Lost and Found Service**
-
-**Mark as Lost:** Owners can update their pet’s status to “Lost” and provide additional details such as last known location and special notes.
-
-**Finder Actions:** Finders can access the pet’s profile by entering its unique ID or scanning a tag.
-
-**Secure Communication:** Finders can notify owners and optionally share the pet’s last known location via secure messaging.
-
-**Blockchain Logging:** Lost and found events are logged immutably on the blockchain.
 
 **3. Health Record Management**
 
-**Owner Updates:** Pet owners can upload health records such as vaccination details, allergies, and minor illnesses.
-
-**Veterinarian Access:** Authorized veterinarians can add medical diagnoses, prescriptions, and treatment plans to the pet’s profile.
-
-**Data Privacy:** Health records are visible only to owners and veterinarians.
-
 **4. Ownership Transfer**
 
-**Initiate Transfer:** Allowing owners to initiate ownership transfer with a secure request, generating an approval token for validation of transfer.
+**5. Smart Contract Insurance Claim Management**
 
-**Email Notification:** Notify the new owner via email with an approval link for secure transfer.
-
-**Approval Process:** Validate pet details and ownership hash from databases, ensuring secure transfer of pet details.
-
-**Hash Generation and Logging:** Generate a transfer hash, log the event in ResDB, and update MongoDB with new ownership details (new owner’s name, ID, email, and so on). Transfer Status is displayed for a smooth user experience.
-
-**5. Insurance Claim Management**
-
-**Link Existing Insurance:** Owners can link existing insurance policies to their pet’s profile by providing policy details through smart contract.
-
-**Submit Claims:** Pet owners can upload required documents for insurance claims, including vet bills and medical reports.
-
-**Smart Contract Pre-Approval:** Claims are pre-validated by smart contracts before submission to the insurance provider.
-
-**Claim Status Updates:** Owners are notified about claim status (approved/denied) directly on the platform.
 
 **Technology Stack**
 
@@ -56,7 +23,6 @@ React.js , MaterialUI
 
 **Backend**
 Node.js, expressjs
-
 
 **Database**
 ResilientDB (Blockchain-based database)
@@ -68,5 +34,36 @@ Practical Byzantine Fault Tolerance (PBFT)  blockchain protocol for logging even
 Link for frontend repo [PetChainPlus](https://github.com/nehapradeep/PetChainPlus)
 
 For more info check out this blog [PetChain](https://blog.resilientdb.com/2024/12/08/PetChain.html)
+
+
+Currently upgrading petchain to an emergency tool during disasters like the LA wildfires:
+
+**Wild Animals (Zoos)**
+
+Develop a centralized dashboard for zoos to register and track animals, ensuring secure, tamper-proof records on the blockchain.
+
+Enable bulk registration for streamlined data management.
+
+Implement a **predictive emergency system that detects disasters based on animal behavior anomalies and environmental changes**.
+
+Generate **evacuation time estimates and predict potential escape routes** during crises.
+
+Trigger **smart contracts to send alerts to shelters, release pet medical records to emergency vets, and coordinate with rescue organizations**.
+
+**Pets**
+
+Create a dashboard for pet owners to store tamper-proof pet records (dogs, cats, birds, rabbits, etc.).
+
+Develop a GPS-enabled **smart collar** with enhanced indoor and outdoor positioning accuracy.
+
+Implement AI-powered health monitoring to detect early illness signs and alert owners.
+
+Enable **geofencing** to notify owners if pets leave designated safe zones.
+
+Enhance the Lost & Found feature with **live location tracking.**
+
+**Blockchain-Based Fundraiser**
+
+Ensure transparency and trust in donations for shelters and animal welfare initiatives.
 
 
