@@ -36,7 +36,7 @@ Link for frontend repo [PetChainPlus](https://github.com/nehapradeep/PetChainPlu
 For more info check out this blog [PetChain](https://blog.resilientdb.com/2024/12/08/PetChain.html)
 
 
-Currently upgrading petchain to an emergency tool during disasters like the LA wildfires:
+**Currently upgrading petchain to an emergency tool during disasters like the LA wildfires:**
 
 **Wild Animals (Zoos)**
 
